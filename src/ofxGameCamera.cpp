@@ -49,7 +49,7 @@ ofxGameCamera::ofxGameCamera() {
 
 	rollSpeed = 2;
 
-
+	hasLoaded = false;
 	cameraPositionFile =  "_gameCameraPosition.xml";
 }
 
@@ -57,6 +57,31 @@ void ofxGameCamera::setup(){
 	ofAddListener(ofEvents().update, this, &ofxGameCamera::update);
 }
 
+void ofxGameCamera::moveForward()
+{
+	targetNode.dolly(-speed);
+}
+void ofxGameCamera::moveBack()
+{
+	targetNode.dolly(speed);
+}
+
+void ofxGameCamera::moveLeft()
+{
+	targetNode.truck(-speed);
+}
+void ofxGameCamera::moveRight()
+{
+	targetNode.truck(speed);
+}
+void ofxGameCamera::moveUp()
+{
+	targetNode.boom(speed);
+}
+void ofxGameCamera::moveDown()
+{
+	targetNode.boom(-speed);
+}
 void ofxGameCamera::update(ofEventArgs& args){	
     
     ofVec3f startPos = getPosition();
@@ -65,32 +90,29 @@ void ofxGameCamera::update(ofEventArgs& args){
 	//forward
     if(applyTranslation){
         if(ofGetKeyPressed('w') || (useArrowKeys && ofGetKeyPressed(OF_KEY_UP)) ){
-            targetNode.dolly(-speed);
-			//dolly(-speed);
+			moveForward();
+
         }
         
-        if(ofGetKeyPressed('s') || (useArrowKeys && ofGetKeyPressed(OF_KEY_DOWN)) ){
-            targetNode.dolly(speed);
-			//dolly(speed);
+        if(ofGetKeyPressed('s') || (useArrowKeys && ofGetKeyPressed(OF_KEY_DOWN)) ){    
+			moveBack();
+
         }
         
         if(ofGetKeyPressed('a') || (useArrowKeys && ofGetKeyPressed(OF_KEY_LEFT)) ){
-            targetNode.truck(-speed);
-			//truck(-speed);
+            moveLeft();
         }
         
         if(ofGetKeyPressed('d') || (useArrowKeys && ofGetKeyPressed(OF_KEY_RIGHT)) ){
-            targetNode.truck(speed);
-			//truck(speed);
+            moveRight();
         }
         
         if(ofGetKeyPressed('c') || (useArrowKeys && ofGetKeyPressed(OF_KEY_PAGE_DOWN)) ){
-            targetNode.boom(-speed);
-			//boom(-speed);
+			moveDown();
         }
         
         if(ofGetKeyPressed('e') || (useArrowKeys && ofGetKeyPressed(OF_KEY_PAGE_UP)) ){
-            targetNode.boom(speed);
+            moveUp();
         }
 		
 		//TODO make variable
@@ -187,9 +209,22 @@ void ofxGameCamera::saveCameraPosition()
 
 	savePosition.saveFile(cameraPositionFile);
 }
-
+void ofxGameCamera::loadCachedPosition()
+{
+	targetNode.setPosition(cachedTargetNodePosition);
+	targetXRot = rotationX = cachedRotationX; 
+	targetYRot = rotationY = cachedRotationY;
+	targetZRot = rotationZ = cachedRotationZ; 
+	setFov(cachedFov);
+	updateRotation();
+}
 void ofxGameCamera::loadCameraPosition()
 {
+	if (hasLoaded)
+	{
+		loadCachedPosition();
+		return;
+	}
 	ofxXmlSettings loadPosition;
 	if(loadPosition.loadFile(cameraPositionFile)){
 
@@ -200,23 +235,26 @@ void ofxGameCamera::loadCameraPosition()
 							loadPosition.getValue("Y", 0.),
 							loadPosition.getValue("Z", 0.)));
 		targetNode.setPosition(getPosition());
+		cachedTargetNodePosition = getPosition();
 		
 		loadPosition.popTag();
 
 		loadPosition.pushTag("rotation");
-		targetXRot = rotationX = loadPosition.getValue("X", 0.);
-		targetYRot = rotationY = loadPosition.getValue("Y", 0.);
-		targetZRot = rotationZ = loadPosition.getValue("Z", 0.);
+		cachedRotationX = targetXRot = rotationX = loadPosition.getValue("X", 0.);
+		cachedRotationY = targetYRot = rotationY = loadPosition.getValue("Y", 0.);
+		cachedRotationZ =  targetZRot = rotationZ = loadPosition.getValue("Z", 0.);
 		float fov = loadPosition.getValue("FOV", -1);
+		
 		if(fov != -1){
 			setFov(fov);
 		}
-		
+		cachedFov = getFov();
 		loadPosition.popTag();
 
 		loadPosition.popTag(); //pop camera;
 
 		updateRotation();
+		hasLoaded = true;
 	}
 	else{
 		ofLog(OF_LOG_ERROR, "ofxGameCamera: couldn't load position!");

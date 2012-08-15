@@ -58,4 +58,20 @@ class ofxGameCamera : public ofCamera {
 	
 	void setAnglesFromOrientation();
     void reset();
+	
+	void moveForward();
+	void moveBack();
+	void moveLeft();
+	void moveRight();
+	void moveUp();
+	void moveDown();
+	
+	//
+	void loadCachedPosition();
+	ofVec3f cachedTargetNodePosition;
+	float cachedRotationX;
+	float cachedRotationY;
+	float cachedRotationZ;
+	float cachedFov;
+	bool hasLoaded;
 };
